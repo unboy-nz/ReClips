@@ -1,7 +1,9 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { GeminiService } from './services/geminiService';
 import { RecapState, VoiceName, VoiceDescriptions, StoryTone, ToneDescriptions } from './types';
 import { decode, decodeAudioData, audioBufferToWav, applyEffects } from './utils/audioUtils';
+import { generateSRT } from './utils/srtUtils';
 
 // UI Components extracted from App to avoid re-declaration on render and fix type issues
 const Panel = ({ children, className = "" }: { children?: React.ReactNode, className?: string }) => (
@@ -29,6 +31,7 @@ const App: React.FC = () => {
     isGeneratingScript: false,
     isGeneratingAudio: false,
     audioUrl: null,
+    srtUrl: null,
     error: null,
     narrationSpeed: 1.05,
     enableMastering: true,
@@ -203,9 +206,17 @@ const App: React.FC = () => {
       }
 
       const processedBuffer = await applyEffects(audioBuffer, speed, state.enableMastering);
-      const url = URL.createObjectURL(audioBufferToWav(processedBuffer));
-      setState(prev => ({ ...prev, audioUrl: url, isGeneratingAudio: false }));
+      const wavBlob = audioBufferToWav(processedBuffer);
+      const audioUrl = URL.createObjectURL(wavBlob);
+
+      // Generate SRT
+      const srtContent = generateSRT(cleanScript, processedBuffer.duration);
+      const srtBlob = new Blob([srtContent], { type: 'text/plain' });
+      const srtUrl = URL.createObjectURL(srtBlob);
+
+      setState(prev => ({ ...prev, audioUrl, srtUrl, isGeneratingAudio: false }));
     } catch (err: any) {
+      console.error(err);
       setState(prev => ({ ...prev, error: "အသံဖိုင်ထုတ်လုပ်၍မရပါ။", isGeneratingAudio: false }));
     }
   };
@@ -218,12 +229,13 @@ const App: React.FC = () => {
 
   const handleClearAll = () => {
     if (state.audioUrl) URL.revokeObjectURL(state.audioUrl);
+    if (state.srtUrl) URL.revokeObjectURL(state.srtUrl);
     setYoutubeUrl('');
     if (fileInputRef.current) fileInputRef.current.value = '';
     setState({
       transcript: '', title: '', script: '', hooks: [],
       isGeneratingScript: false, isGeneratingAudio: false,
-      audioUrl: null, error: null,
+      audioUrl: null, srtUrl: null, error: null,
       narrationSpeed: 1.05, enableMastering: true,
       selectedTone: StoryTone.Dramatic,
       videoDuration: null,
@@ -620,14 +632,26 @@ const App: React.FC = () => {
                                  <h5 className="text-white font-bold text-lg mb-1">{state.title || "Untitled Project"}</h5>
                                  <p className="text-xs text-white/40 uppercase tracking-wider font-mono">Mastered • {state.syncToVideo ? 'Synced' : 'Standard'} • {VoiceDescriptions[selectedVoice].label}</p>
                               </div>
-                              <a 
-                                 href={state.audioUrl} 
-                                 download={`${(state.title || "recap").replace(/\s+/g, '_')}.wav`}
-                                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-white transition-colors"
-                              >
-                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                                 DOWNLOAD .WAV
-                              </a>
+                              <div className="flex gap-2">
+                                 {state.srtUrl && (
+                                    <a 
+                                        href={state.srtUrl} 
+                                        download={`${(state.title || "recap").replace(/\s+/g, '_')}.srt`}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-white transition-colors border border-white/5"
+                                    >
+                                        <span className="text-cyan-400 font-mono text-[10px] border border-cyan-400 rounded px-1">CC</span>
+                                        DOWNLOAD SRT
+                                    </a>
+                                 )}
+                                 <a 
+                                    href={state.audioUrl} 
+                                    download={`${(state.title || "recap").replace(/\s+/g, '_')}.wav`}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-white transition-colors"
+                                 >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    DOWNLOAD .WAV
+                                 </a>
+                              </div>
                            </div>
                            
                            <audio src={state.audioUrl} controls className="w-full h-10 block rounded-lg outline-none invert-[.9] contrast-[.85] hue-rotate-180" />

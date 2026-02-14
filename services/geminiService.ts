@@ -11,6 +11,12 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
+
+
+
+
+
+
   async fetchTranscriptFromUrl(url: string): Promise<string> {
     try {
       const response = await this.ai.models.generateContent({

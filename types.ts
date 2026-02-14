@@ -7,6 +7,7 @@ export interface RecapState {
   isGeneratingScript: boolean;
   isGeneratingAudio: boolean;
   audioUrl: string | null;
+  srtUrl: string | null;
   error: string | null;
   narrationSpeed: number;
   enableMastering: boolean;
