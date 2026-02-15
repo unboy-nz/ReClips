@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from 'react';
 import { GeminiService } from './services/geminiService';
 import { RecapState, VoiceName, VoiceDescriptions, StoryTone, ToneDescriptions } from './types';
@@ -21,7 +20,7 @@ const SectionHeader = ({ title, icon }: { title: string, icon: React.ReactNode }
   </div>
 );
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   // App Content State
   const [state, setState] = useState<RecapState>({
     transcript: '',
@@ -78,9 +77,10 @@ const App: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    const MAX_SIZE = 300 * 1024 * 1024; 
+    // Updated Max Size to 20MB for inline processing
+    const MAX_SIZE = 20 * 1024 * 1024; 
     if (file.size > MAX_SIZE) {
-      setState(prev => ({ ...prev, error: "ဗီဒီယိုဖိုင်က အရမ်းကြီးနေပါတယ်။ 300MB အောက်ဖိုင်များကိုသာ တိုက်ရိုက်တင်နိုင်ပါသည်။" }));
+      setState(prev => ({ ...prev, error: "ဗီဒီယိုဖိုင် အရမ်းကြီးနေပါတယ်။ 20MB အောက်ဖိုင်များကိုသာ တိုက်ရိုက်တင်နိုင်ပါသည်။ ပိုကြီးသောဖိုင်များအတွက် YouTube Link ကိုအသုံးပြုပါ။" }));
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
@@ -111,7 +111,7 @@ const App: React.FC = () => {
           setState(prev => ({ ...prev, transcript, error: null }));
         } catch (err: any) {
           console.error("Processing Error:", err);
-          setState(prev => ({ ...prev, error: "ဗီဒီယိုကို စစ်ဆေးရာတွင် အမှားအယွင်းရှိနေပါသည်။" }));
+          setState(prev => ({ ...prev, error: err.message || "ဗီဒီယိုကို စစ်ဆေးရာတွင် အမှားအယွင်းရှိနေပါသည်။" }));
         } finally {
           setIsProcessingVideo(false);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -348,7 +348,7 @@ const App: React.FC = () => {
                            <svg className="w-8 h-8 text-white/30 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                            <div className="text-center">
                               <span className="block text-sm font-medium text-white/80">Click to Browse</span>
-                              <span className="block text-[10px] text-white/40 mt-1">MP4, MOV (Max 300MB)</span>
+                              <span className="block text-[10px] text-white/40 mt-1">MP4, MOV (Max 20MB)</span>
                            </div>
                         </>
                       )}
@@ -667,5 +667,3 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-export default App;

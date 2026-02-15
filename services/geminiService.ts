@@ -11,16 +11,10 @@ export class GeminiService {
     this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-
-
-
-
-
-
   async fetchTranscriptFromUrl(url: string): Promise<string> {
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: `I have a YouTube video at this URL: ${url}. Please find and provide the full transcript or a very detailed scene-by-scene breakdown of this video. I need the raw text to rewrite it into a recap script later. Return only the transcript content.`,
         config: {
           tools: [{ googleSearch: {} }],
@@ -41,7 +35,7 @@ export class GeminiService {
   async processVideo(base64Data: string, mimeType: string): Promise<string> {
     try {
       const response = await this.ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             {
@@ -58,8 +52,14 @@ export class GeminiService {
       });
 
       return response.text || "ဗီဒီယိုကို နားမလည်နိုင်ပါ။ ကျေးဇူးပြု၍ အခြားဗီဒီယိုတစ်ခု စမ်းကြည့်ပါ။";
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing video:", error);
+      if (error.status === 403 || error.code === 403) {
+        throw new Error("Permission denied. This model may not support video input or requires a different API key tier.");
+      }
+      if (error.status === 413) {
+        throw new Error("Video file is too large for direct processing.");
+      }
       throw new Error("Failed to process video file. Ensure it is a valid video and not too large.");
     }
   }
