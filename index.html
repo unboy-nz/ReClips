@@ -7,6 +7,10 @@
     <title>Burmese Movie Recap Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      // Polyfill for process.env to prevent ReferenceError in browser environments
+      window.process = window.process || { env: {} };
+    </script>
     <style>
         body {
             font-family: 'Inter', 'Padauk', sans-serif;
